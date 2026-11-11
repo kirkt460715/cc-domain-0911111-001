@@ -10,6 +10,7 @@ import {errorDocument, fail} from './errors.js';
 import {jsonParse, integer} from './value.js';
 import {runImport, replayImportPlan} from './pipeline.js';
 import {operationsReport, regionReport, sourceScorecard} from './reports.js';
+import * as baselineCommands from './baselines.js';
 
 export function argumentsFor(argv) {
   const [command = 'help', ...rest] = argv;
@@ -52,7 +53,8 @@ export async function execute(argv) {
         'export', 'export-get', 'export-manifest', 'export-revoke', 'profile', 'spikes',
         'flatlines', 'disagreements', 'freshness', 'inventory', 'reconcile', 'impact',
         'status', 'catalog', 'batches', 'audit', 'verify', 'checkpoint', 'backup',
-        'journal-audit', 'historical-status', 'lineage', 'restore', 'backup-inspect', 'backup-compare', 'rolling', 'coverage', 'runs', 'recover-lock', 'import', 'import-plan', 'operations', 'region', 'scorecard', 'serve',
+        'journal-audit', 'historical-status', 'lineage', 'restore', 'backup-inspect', 'backup-compare', 'rolling', 'coverage', 'runs', 'recover-lock', 'import', 'import-plan', 'operations', 'region', 'scorecard',
+        'baseline-create', 'baseline-get', 'baseline-list', 'baseline-revoke', 'baseline-position', 'baseline-compare', 'serve',
       ],
       rules: 'All input dates include explicit timezone. State remains under --root. No downloads are required.',
     };
@@ -178,6 +180,18 @@ export async function execute(argv) {
       return regionReport(await ledger.store.read(), input);
     case 'scorecard':
       return sourceScorecard(await ledger.store.read(), options.id);
+    case 'baseline-create':
+      return ledger.createBaseline(input, actor);
+    case 'baseline-get':
+      return ledger.baseline(options.id);
+    case 'baseline-list':
+      return ledger.baselines(input);
+    case 'baseline-revoke':
+      return ledger.revokeBaseline(input, actor);
+    case 'baseline-position':
+      return ledger.baselinePosition(input);
+    case 'baseline-compare':
+      return ledger.compareBaselines(input);
     case 'serve': {
       const server = await listen(ledger, {port: Number(options.port ?? 8080), token: process.env.FIELD_LEDGER_TOKEN});
       const stop = () => server.close();

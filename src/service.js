@@ -7,6 +7,7 @@ import * as alerting from './alerts.js';
 import * as snapshots from './exports.js';
 import * as quality from './quality.js';
 import * as reconciliation from './reconcile.js';
+import * as baselines from './baselines.js';
 import {event, summary, projectEvents} from './state.js';
 import {clone, digest, identifier, text} from './value.js';
 import {requireValue} from './errors.js';
@@ -126,6 +127,24 @@ export class Ledger {
   }
   async impact(input) {
     return reconciliation.correctionImpact(await this.store.read(), input);
+  }
+  async createBaseline(input, actor) {
+    return this.mutate('baseline.create', actor, state => baselines.createBaseline(state, input));
+  }
+  async baseline(id) {
+    return baselines.getBaseline(await this.store.read(), id);
+  }
+  async baselines(input) {
+    return baselines.listBaselines(await this.store.read(), input);
+  }
+  async revokeBaseline(input, actor) {
+    return this.mutate('baseline.revoke', actor, state => baselines.revokeBaseline(state, input));
+  }
+  async baselinePosition(input) {
+    return baselines.baselinePosition(await this.store.read(), input);
+  }
+  async compareBaselines(input) {
+    return baselines.compareBaselines(await this.store.read(), input);
   }
   async verify() {
     const storage = await this.store.verify();

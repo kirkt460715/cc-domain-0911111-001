@@ -95,6 +95,8 @@ export function createServer(ledger, options = {}) {
           default:
             if (route.startsWith('/exports/')) {
               result = await ledger.getExport(decodeURIComponent(route.slice(9)));
+            } else if (route.startsWith('/baselines/')) {
+              result = await ledger.baseline(decodeURIComponent(route.slice(11)));
             } else {
               fail('NOT_FOUND', 'Endpoint does not exist', {}, 404);
             }
@@ -167,6 +169,18 @@ export function createServer(ledger, options = {}) {
             break;
           case '/impact':
             result = await ledger.impact(input);
+            break;
+          case '/baselines':
+            result = await ledger.createBaseline(input, actor);
+            break;
+          case '/baselines/position':
+            result = await ledger.baselinePosition(input);
+            break;
+          case '/baselines/compare':
+            result = await ledger.compareBaselines(input);
+            break;
+          case '/baselines/revoke':
+            result = await ledger.revokeBaseline(input, actor);
             break;
           default:
             fail('NOT_FOUND', 'Endpoint does not exist', {}, 404);

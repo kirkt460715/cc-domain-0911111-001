@@ -15,6 +15,7 @@ export function emptyState() {
     rules: {},
     alerts: {},
     exports: {},
+    baselines: {},
     audits: [],
   };
 }
@@ -90,6 +91,15 @@ export function applyEvent(state, event) {
       record.reason = data.reason;
       break;
     }
+    case 'baseline.created':
+      state.baselines[data.id] = clone(data);
+      break;
+    case 'baseline.revoked': {
+      const baseline = lookup(state, 'baselines', data.id);
+      baseline.revoked = true;
+      baseline.revokeReason = data.reason;
+      break;
+    }
     case 'audit.recorded':
       state.audits.push(clone(data));
       break;
@@ -146,5 +156,6 @@ export function summary(state) {
     quarantined: Object.values(state.quarantine).filter(item => item.status === 'open').length,
     activeAlerts: Object.values(state.alerts).filter(item => item.active).length,
     exports: Object.keys(state.exports).length,
+    baselines: Object.keys(state.baselines ?? {}).length,
   };
 }

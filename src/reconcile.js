@@ -3,6 +3,7 @@ import {requireValue} from './errors.js';
 import {filterObservations, queryInput} from './query.js';
 import {observationKey} from './state.js';
 import {impactedExports} from './exports.js';
+import {baselineParams} from './baselines.js';
 
 export function inventory(state, input) {
   const query = queryInput(input);
@@ -124,6 +125,37 @@ export function auditState(state) {
       const current = state.observations[entry.key];
       if (!current || !current.history.some(revision => revision.revision === entry.revision)) {
         findings.push({code: 'EXPORT_LINEAGE', id: record.id, key: entry.key});
+      }
+    }
+  }
+  for (const record of Object.values(state.baselines ?? {})) {
+    let expected;
+    try {
+      expected = digest({params: baselineParams(record), months: record.months, lineage: record.lineage});
+    } catch {
+      expected = null;
+    }
+    if (expected !== record.checksum) {
+      findings.push({code: 'BASELINE_CHECKSUM', id: record.id});
+    }
+    const frozenKeys = new Set();
+    for (const entry of record.lineage) {
+      frozenKeys.add(entry.key);
+      const current = state.observations[entry.key];
+      if (!current || !current.history.some(revision => revision.revision === entry.revision)) {
+        findings.push({code: 'BASELINE_LINEAGE', id: record.id, key: entry.key});
+      }
+    }
+    for (const month of record.months) {
+      const blocks = record.scope === 'station' ? [month] : [month.fixed, month.available];
+      for (const block of blocks) {
+        for (const day of block.daily ?? []) {
+          for (const ref of day.lineage ?? []) {
+            if (!frozenKeys.has(ref.key)) {
+              findings.push({code: 'BASELINE_DAILY_LINEAGE', id: record.id, key: ref.key});
+            }
+          }
+        }
       }
     }
   }
